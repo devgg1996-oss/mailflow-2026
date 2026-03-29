@@ -4,14 +4,25 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const port = Number(process.env.PORT ?? 3000);
+
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+    ],
+    credentials: true,
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'Cookie', "X-Device-Id"],
+    optionsSuccessStatus: 204,
+    exposedHeaders: ['Set-Cookie'], // 쿠키 노출 헤더 설정
+  });
 
   // 1. Swagger 설정 구성
   const config = new DocumentBuilder()
     .setTitle('MailFlow 2026 API') // 프로젝트 제목
     .setDescription('구글폼 응답 기반 마케팅 이메일 자동화 서비스 API 문서') // 설명
     .setVersion('1.0') // 버전
-    .addTag('auth') // 태그 추가 (선택)
-    .addTag('campaigns')
+    .addServer(`http://localhost:${port}`, '로컬')
     .addBearerAuth() // JWT 인증이 필요한 경우 추가
     .build();
 
@@ -21,6 +32,6 @@ async function bootstrap() {
   // 3. Swagger UI 경로 설정 (예: http://localhost:3000/api-docs)
   SwaggerModule.setup('api-docs', app, document);
 
-  await app.listen(3000);
+  await app.listen(port);
 }
 bootstrap();
