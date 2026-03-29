@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// --- Enums (DDL의 DEFAULT / COMMENT에 맞춤) ---
+
+enum ActiveStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ContactType {
+  GOOGLE_SHEET
+}
+
+// --- Models ---
+
+model User {
+  id           Int       @default(autoincrement())
+  guid         String    @db.Uuid
+  provider     String /// unique (애플리케이션 레벨)
+  providerId   String    @map("providerId")
+  email        String
+  accessToken  String?   @map("accessToken") @db.VarChar(255)
+  refreshToken String?   @map("refreshToken") @db.VarChar(255)
+  lastLoginAt  String?   @map("lastLoginAt") @db.VarChar(255)
+  createdAt    String?   @map("createdAt") @db.VarChar(255)
+  updatedAt    String?   @map("updatedAt") @db.VarChar(255)
+  deletedAt    String?   @map("deletedAt") @db.VarChar(255)
+
+  sheets              Sheet[]
+  campaigns           Campaign[]
+  emailTemplates      EmailTemplate[]
+  contacts            Contact[]
+
+  @@id([id, guid])
+  @@map("user")
+}
+
+model Sheet {
+  id        Int     @default(autoincrement())
+  guid      String  @db.Uuid
+  sheetId   String  @map("sheetId") /// unique (애플리케이션 레벨)
+  title     String?
+  createdAt String? @map("createdAt") @db.VarChar(255)
+  updatedAt String? @map("updatedAt") @db.VarChar(255)
+  deletedAt String? @map("deletedAt") @db.VarChar(255)
+
+  userId   Int    @map("user_id")
+  userGuid String @map("user_guid") @db.Uuid
+
+  user     User              @relation(fields: [userId, userGuid], references: [id, guid])
+  contacts Contact[]
+  campaigns SheetCampaign[]
+
+  @@id([id, guid])
+  @@map("sheet")
+}
+
+model Campaign {
+  id        Int     @default(autoincrement())
+  guid      String  @db.Uuid
+  title     String?
+  type      String? /// unique (COMMENT)
+  status    String?
+  createdAt String? @map("createdAt") @db.VarChar(255)
+  updatedAt String? @map("updatedAt") @db.VarChar(255)
+  deletedAt String? @map("deletedAt") @db.VarChar(255)
+
+  userId   Int    @map("user_id")
+  userGuid String @map("user_guid") @db.Uuid
+
+  user                 User                   @relation(fields: [userId, userGuid], references: [id, guid])
+  campaignEmailTemplates CampaignEmailTemplate[]
+  sheetCampaigns       SheetCampaign[]
+
+  @@id([id, guid])
+  @@map("campaign")
+}
+
+model EmailTemplate {
+  id        Int           @default(autoincrement())
+  guid      String        @db.Uuid
+  title     String?
+  body      String        @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
+  status    ActiveStatus  @default(ACTIVE) /// 활성, 비활성 등
+  createdAt String?       @map("createdAt") @db.VarChar(255)
+  updatedAt String?       @map("updatedAt") @db.VarChar(255)
+  deletedAt String?       @map("deletedAt") @db.VarChar(255)
+
+  userId   Int    @map("user_id")
+  userGuid String @map("user_guid") @db.Uuid
+
+  user                 User                   @relation(fields: [userId, userGuid], references: [id, guid])
+  campaignEmailTemplates CampaignEmailTemplate[]
+  sendEmailHistories   SendEmailHistory[]
+
+  @@id([id, guid])
+  @@map("email_template")
+}
+
+model CampaignEmailTemplate {
+  id        Int           @default(autoincrement())
+  guid      String        @db.Uuid
+  title     String?
+  body      String        @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
+  status    ActiveStatus  @default(ACTIVE)
+  createdAt String?       @map("createdAt") @db.VarChar(255)
+  updatedAt String?       @map("updatedAt") @db.VarChar(255)
+  deletedAt String?       @map("deletedAt") @db.VarChar(255)
+
+  campaignId   Int    @map("campaign_id")
+  campaignGuid String @map("campaign_guid") @db.Uuid
+
+  emailTemplateId   Int    @map("email_template_id")
+  emailTemplateGuid String @map("email_template_guid") @db.Uuid
+
+  campaign      Campaign         @relation(fields: [campaignId, campaignGuid], references: [id, guid])
+  emailTemplate EmailTemplate    @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
+  sendHistories SendEmailHistory[]
+
+  @@id([id, guid])
+  @@map("campaign_email_template")
+}
+
+model Contact {
+  id        Int         @default(autoincrement())
+  guid      String      @db.Uuid
+  type      ContactType @default(GOOGLE_SHEET) /// 구글시트 추출, 직접 입력 등
+  name      String?
+  email     String
+  meta      String?     @db.VarChar(255)
+  createdAt String?     @map("createdAt") @db.VarChar(255)
+  updatedAt String?     @map("updatedAt") @db.VarChar(255)
+  deletedAt String?     @map("deletedAt") @db.VarChar(255)
+
+  userId   Int    @map("user_id")
+  userGuid String @map("user_guid") @db.Uuid
+
+  sheetId   Int    @map("sheet_id")
+  sheetGuid String @map("sheet_guid") @db.Uuid
+
+  user   User   @relation(fields: [userId, userGuid], references: [id, guid])
+  sheet  Sheet  @relation(fields: [sheetId, sheetGuid], references: [id, guid])
+  sendEmailHistories SendEmailHistory[]
+
+  @@id([id, guid])
+  @@map("contact")
+}
+
+model SheetCampaign {
+  id        Int     @default(autoincrement())
+  guid      String  @db.Uuid
+  title     String?
+  type      String?
+  status    String?
+  createdAt String? @map("createdAt") @db.VarChar(255)
+  updatedAt String? @map("updatedAt") @db.VarChar(255)
+  deletedAt String? @map("deletedAt") @db.VarChar(255)
+
+  campaignId   Int    @map("campaign_id")
+  campaignGuid String @map("campaign_guid") @db.Uuid
+
+  sheetId   Int    @map("sheet_id")
+  sheetGuid String @map("sheet_guid") @db.Uuid
+
+  campaign Campaign @relation(fields: [campaignId, campaignGuid], references: [id, guid])
+  sheet    Sheet    @relation(fields: [sheetId, sheetGuid], references: [id, guid])
+
+  @@id([id, guid])
+  @@map("sheet_campaign")
+}
+
+model SendEmailHistory {
+  id        Int     @default(autoincrement())
+  guid      String  @db.Uuid
+  body      String  /// 치환변수는 {{}} 이렇게 표시
+  status    String
+  sendedAt  String? @map("sendedAt") @db.VarChar(255)
+  createdAt String? @map("createdAt") @db.VarChar(255)
+  updatedAt String? @map("updatedAt") @db.VarChar(255)
+  deletedAt String? @map("deletedAt") @db.VarChar(255)
+
+  emailTemplateId   Int    @map("email_template_id")
+  emailTemplateGuid String @map("email_template_guid") @db.Uuid
+
+  contactId   Int    @map("contact_id")
+  contactGuid String @map("contact_guid") @db.Uuid
+
+  campaignEmailTemplateId   Int    @map("campaign_email_template_id")
+  campaignEmailTemplateGuid String @map("campaign_email_template_guid") @db.Uuid
+
+  emailTemplate         EmailTemplate         @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
+  contact               Contact               @relation(fields: [contactId, contactGuid], references: [id, guid])
+  campaignEmailTemplate CampaignEmailTemplate @relation(fields: [campaignEmailTemplateId, campaignEmailTemplateGuid], references: [id, guid])
+
+  @@id([id, guid])
+  @@map("send_email_history")
+}
