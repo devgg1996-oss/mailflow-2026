@@ -23,184 +23,167 @@ enum ContactType {
 // --- Models ---
 
 model User {
-  id           Int       @default(autoincrement())
-  guid         String    @db.Uuid
-  provider     String /// unique (애플리케이션 레벨)
-  providerId   String    @map("providerId")
-  email        String
-  accessToken  String?   @map("accessToken") @db.VarChar(255)
-  refreshToken String?   @map("refreshToken") @db.VarChar(255)
-  lastLoginAt  String?   @map("lastLoginAt") @db.VarChar(255)
-  createdAt    String?   @map("createdAt") @db.VarChar(255)
-  updatedAt    String?   @map("updatedAt") @db.VarChar(255)
-  deletedAt    String?   @map("deletedAt") @db.VarChar(255)
+  id             BigInt          @id @default(autoincrement()) @map("id")
+  guid           String          @unique @map("guid") @db.VarChar(40)
+  name           String          @map("name")
+  provider       String          @map("provider")
+  providerId     String          @map("provider_id")
+  email          String          @map("email")
+  accessToken    String?         @map("access_token") @db.VarChar(255)
+  refreshToken   String?         @map("refresh_token") @db.VarChar(255)
+  lastLoginAt    DateTime?       @map("last_login_at")
+  createdAt      DateTime?       @map("created_at")
+  updatedAt      DateTime?       @map("updated_at")
+  deletedAt      DateTime?       @map("deleted_at")
+  sheets         Sheet[]
+  campaigns      Campaign[]
+  emailTemplates EmailTemplate[]
+  contacts       Contact[]
 
-  sheets              Sheet[]
-  campaigns           Campaign[]
-  emailTemplates      EmailTemplate[]
-  contacts            Contact[]
-
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("user")
 }
 
 model Sheet {
-  id        Int     @default(autoincrement())
-  guid      String  @db.Uuid
-  sheetId   String  @map("sheetId") /// unique (애플리케이션 레벨)
-  title     String?
-  createdAt String? @map("createdAt") @db.VarChar(255)
-  updatedAt String? @map("updatedAt") @db.VarChar(255)
-  deletedAt String? @map("deletedAt") @db.VarChar(255)
+  id   BigInt @id @default(autoincrement()) @map("id")
+  guid String @unique @map("guid") @db.VarChar(40)
 
-  userId   Int    @map("user_id")
-  userGuid String @map("user_guid") @db.Uuid
-
-  user     User              @relation(fields: [userId, userGuid], references: [id, guid])
-  contacts Contact[]
+  sheetId   String          @map("sheet_id") /// unique (애플리케이션 레벨)
+  title     String?         @map("title")
+  createdAt DateTime?       @map("created_at")
+  updatedAt DateTime?       @map("updated_at")
+  deletedAt DateTime?       @map("deleted_at")
+  userId    BigInt          @map("user_id")
+  userGuid  String          @map("user_guid") @db.VarChar(40)
+  user      User            @relation(fields: [userId, userGuid], references: [id, guid])
+  contacts  Contact[]
   campaigns SheetCampaign[]
 
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("sheet")
 }
 
 model Campaign {
-  id        Int     @default(autoincrement())
-  guid      String  @db.Uuid
-  title     String?
-  type      String? /// unique (COMMENT)
-  status    String?
-  createdAt String? @map("createdAt") @db.VarChar(255)
-  updatedAt String? @map("updatedAt") @db.VarChar(255)
-  deletedAt String? @map("deletedAt") @db.VarChar(255)
-
-  userId   Int    @map("user_id")
-  userGuid String @map("user_guid") @db.Uuid
-
-  user                 User                   @relation(fields: [userId, userGuid], references: [id, guid])
+  id                     BigInt                  @id @default(autoincrement()) @map("id")
+  guid                   String                  @unique @map("guid") @db.VarChar(40)
+  title                  String?                 @map("title")
+  type                   String?                 @map("type") /// unique (COMMENT)
+  status                 String?                 @map("status")
+  createdAt              DateTime?               @map("created_at")
+  updatedAt              DateTime?               @map("updated_at")
+  deletedAt              DateTime?               @map("deleted_at")
+  userId                 BigInt                  @map("user_id")
+  userGuid               String                  @map("user_guid") @db.VarChar(40)
+  user                   User                    @relation(fields: [userId, userGuid], references: [id, guid])
   campaignEmailTemplates CampaignEmailTemplate[]
-  sheetCampaigns       SheetCampaign[]
+  sheetCampaigns         SheetCampaign[]
 
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("campaign")
 }
 
 model EmailTemplate {
-  id        Int           @default(autoincrement())
-  guid      String        @db.Uuid
-  title     String?
-  body      String        @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
-  status    ActiveStatus  @default(ACTIVE) /// 활성, 비활성 등
-  createdAt String?       @map("createdAt") @db.VarChar(255)
-  updatedAt String?       @map("updatedAt") @db.VarChar(255)
-  deletedAt String?       @map("deletedAt") @db.VarChar(255)
-
-  userId   Int    @map("user_id")
-  userGuid String @map("user_guid") @db.Uuid
-
-  user                 User                   @relation(fields: [userId, userGuid], references: [id, guid])
+  id                     BigInt                  @id @default(autoincrement()) @map("id")
+  guid                   String                  @unique @map("guid") @db.VarChar(40)
+  title                  String?                 @map("title")
+  body                   String                  @map("body") @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
+  status                 ActiveStatus            @default(ACTIVE) @map("status") /// 활성, 비활성 등
+  createdAt              DateTime?               @map("created_at")
+  updatedAt              DateTime?               @map("updated_at")
+  deletedAt              DateTime?               @map("deleted_at")
+  userId                 BigInt                  @map("user_id")
+  userGuid               String                  @map("user_guid") @db.VarChar(40)
+  user                   User                    @relation(fields: [userId, userGuid], references: [id, guid])
   campaignEmailTemplates CampaignEmailTemplate[]
-  sendEmailHistories   SendEmailHistory[]
+  sendEmailHistories     SendEmailHistory[]
 
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("email_template")
 }
 
 model CampaignEmailTemplate {
-  id        Int           @default(autoincrement())
-  guid      String        @db.Uuid
-  title     String?
-  body      String        @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
-  status    ActiveStatus  @default(ACTIVE)
-  createdAt String?       @map("createdAt") @db.VarChar(255)
-  updatedAt String?       @map("updatedAt") @db.VarChar(255)
-  deletedAt String?       @map("deletedAt") @db.VarChar(255)
+  id                BigInt             @id @default(autoincrement()) @map("id")
+  guid              String             @unique @map("guid") @db.VarChar(40)
+  title             String?            @map("title")
+  body              String             @map("body") @db.VarChar(255) /// 치환변수는 {{}} 이렇게 표시
+  status            ActiveStatus       @default(ACTIVE) @map("status")
+  createdAt         DateTime?          @map("created_at")
+  updatedAt         DateTime?          @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  campaignId        BigInt             @map("campaign_id")
+  campaignGuid      String             @map("campaign_guid") @db.VarChar(40)
+  emailTemplateId   BigInt             @map("email_template_id")
+  emailTemplateGuid String             @map("email_template_guid") @db.VarChar(40)
+  campaign          Campaign           @relation(fields: [campaignId, campaignGuid], references: [id, guid])
+  emailTemplate     EmailTemplate      @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
+  sendHistories     SendEmailHistory[]
 
-  campaignId   Int    @map("campaign_id")
-  campaignGuid String @map("campaign_guid") @db.Uuid
-
-  emailTemplateId   Int    @map("email_template_id")
-  emailTemplateGuid String @map("email_template_guid") @db.Uuid
-
-  campaign      Campaign         @relation(fields: [campaignId, campaignGuid], references: [id, guid])
-  emailTemplate EmailTemplate    @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
-  sendHistories SendEmailHistory[]
-
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("campaign_email_template")
 }
 
 model Contact {
-  id        Int         @default(autoincrement())
-  guid      String      @db.Uuid
-  type      ContactType @default(GOOGLE_SHEET) /// 구글시트 추출, 직접 입력 등
-  name      String?
-  email     String
-  meta      String?     @db.VarChar(255)
-  createdAt String?     @map("createdAt") @db.VarChar(255)
-  updatedAt String?     @map("updatedAt") @db.VarChar(255)
-  deletedAt String?     @map("deletedAt") @db.VarChar(255)
+  id   BigInt @id @default(autoincrement()) @map("id")
+  guid String @unique @map("guid") @db.VarChar(40)
 
-  userId   Int    @map("user_id")
-  userGuid String @map("user_guid") @db.Uuid
-
-  sheetId   Int    @map("sheet_id")
-  sheetGuid String @map("sheet_guid") @db.Uuid
-
-  user   User   @relation(fields: [userId, userGuid], references: [id, guid])
-  sheet  Sheet  @relation(fields: [sheetId, sheetGuid], references: [id, guid])
+  type               ContactType        @default(GOOGLE_SHEET) @map("type") /// 구글시트 추출, 직접 입력 등
+  name               String?            @map("name")
+  email              String             @map("email")
+  meta               String?            @map("meta") @db.VarChar(255)
+  createdAt          DateTime?          @map("created_at")
+  updatedAt          DateTime?          @map("updated_at")
+  deletedAt          DateTime?          @map("deleted_at")
+  userId             BigInt             @map("user_id")
+  userGuid           String             @map("user_guid") @db.VarChar(40)
+  sheetId            BigInt             @map("sheet_id")
+  sheetGuid          String             @map("sheet_guid") @db.VarChar(40)
+  user               User               @relation(fields: [userId, userGuid], references: [id, guid])
+  sheet              Sheet              @relation(fields: [sheetId, sheetGuid], references: [id, guid])
   sendEmailHistories SendEmailHistory[]
 
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("contact")
 }
 
 model SheetCampaign {
-  id        Int     @default(autoincrement())
-  guid      String  @db.Uuid
-  title     String?
-  type      String?
-  status    String?
-  createdAt String? @map("createdAt") @db.VarChar(255)
-  updatedAt String? @map("updatedAt") @db.VarChar(255)
-  deletedAt String? @map("deletedAt") @db.VarChar(255)
+  id           BigInt    @id @default(autoincrement()) @map("id")
+  guid         String    @unique @map("guid") @db.VarChar(40)
+  title        String?   @map("title")
+  type         String?   @map("type")
+  status       String?   @map("status")
+  createdAt    DateTime? @map("created_at")
+  updatedAt    DateTime? @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+  campaignId   BigInt    @map("campaign_id")
+  campaignGuid String    @map("campaign_guid") @db.VarChar(40)
+  sheetId      BigInt    @map("sheet_id")
+  sheetGuid    String    @map("sheet_guid") @db.VarChar(40)
+  campaign     Campaign  @relation(fields: [campaignId, campaignGuid], references: [id, guid])
+  sheet        Sheet     @relation(fields: [sheetId, sheetGuid], references: [id, guid])
 
-  campaignId   Int    @map("campaign_id")
-  campaignGuid String @map("campaign_guid") @db.Uuid
-
-  sheetId   Int    @map("sheet_id")
-  sheetGuid String @map("sheet_guid") @db.Uuid
-
-  campaign Campaign @relation(fields: [campaignId, campaignGuid], references: [id, guid])
-  sheet    Sheet    @relation(fields: [sheetId, sheetGuid], references: [id, guid])
-
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("sheet_campaign")
 }
 
 model SendEmailHistory {
-  id        Int     @default(autoincrement())
-  guid      String  @db.Uuid
-  body      String  /// 치환변수는 {{}} 이렇게 표시
-  status    String
-  sendedAt  String? @map("sendedAt") @db.VarChar(255)
-  createdAt String? @map("createdAt") @db.VarChar(255)
-  updatedAt String? @map("updatedAt") @db.VarChar(255)
-  deletedAt String? @map("deletedAt") @db.VarChar(255)
+  id                        BigInt                @id @default(autoincrement()) @map("id")
+  guid                      String                @unique @map("guid") @db.VarChar(40)
+  body                      String                @map("body") /// 치환변수는 {{}} 이렇게 표시
+  status                    String                @map("status")
+  sendedAt                  DateTime?             @map("sended_at")
+  createdAt                 DateTime?             @map("created_at")
+  updatedAt                 DateTime?             @map("updated_at")
+  deletedAt                 DateTime?             @map("deleted_at")
+  emailTemplateId           BigInt                @map("email_template_id")
+  emailTemplateGuid         String                @map("email_template_guid") @db.VarChar(40)
+  contactId                 BigInt                @map("contact_id")
+  contactGuid               String                @map("contact_guid") @db.VarChar(40)
+  campaignEmailTemplateId   BigInt                @map("campaign_email_template_id")
+  campaignEmailTemplateGuid String                @map("campaign_email_template_guid") @db.VarChar(40)
+  emailTemplate             EmailTemplate         @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
+  contact                   Contact               @relation(fields: [contactId, contactGuid], references: [id, guid])
+  campaignEmailTemplate     CampaignEmailTemplate @relation(fields: [campaignEmailTemplateId, campaignEmailTemplateGuid], references: [id, guid])
 
-  emailTemplateId   Int    @map("email_template_id")
-  emailTemplateGuid String @map("email_template_guid") @db.Uuid
-
-  contactId   Int    @map("contact_id")
-  contactGuid String @map("contact_guid") @db.Uuid
-
-  campaignEmailTemplateId   Int    @map("campaign_email_template_id")
-  campaignEmailTemplateGuid String @map("campaign_email_template_guid") @db.Uuid
-
-  emailTemplate         EmailTemplate         @relation(fields: [emailTemplateId, emailTemplateGuid], references: [id, guid])
-  contact               Contact               @relation(fields: [contactId, contactGuid], references: [id, guid])
-  campaignEmailTemplate CampaignEmailTemplate @relation(fields: [campaignEmailTemplateId, campaignEmailTemplateGuid], references: [id, guid])
-
-  @@id([id, guid])
+  @@unique([id, guid])
   @@map("send_email_history")
 }
