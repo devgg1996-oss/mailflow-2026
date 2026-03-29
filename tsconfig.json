@@ -14,6 +14,11 @@
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "paths": {
+      "@prisma/client": [
+        "./node_modules/.pnpm/@prisma+client@*/node_modules/.prisma/client/index.d.ts"
+      ]
+    },
     "incremental": true,
     "skipLibCheck": true,
     "strictNullChecks": true,
