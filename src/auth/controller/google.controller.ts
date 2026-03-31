@@ -29,7 +29,13 @@ export class GoogleController {
     return await new Promise((resolve, reject) => {
       // 세션 관련 코드 제거
       passport.authenticate('google', {
-        scope: ['email', 'profile', 'https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/drive.file'],
+        scope: [
+          'email', 'profile', 
+          'https://www.googleapis.com/auth/spreadsheets.readonly', 
+          'https://www.googleapis.com/auth/drive.file',
+          'https://www.googleapis.com/auth/script.projects', // 스크립트 생성/수정 권한
+          'https://www.googleapis.com/auth/script.deployments' // 스크립트 배포 권한
+        ],
         accessType: 'offline', // refresh token 발급을 위해 필요
         prompt: 'consent',
         state: state || 'default'

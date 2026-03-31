@@ -4,6 +4,25 @@ import { BaseUsersService } from 'src/users/service/base-users.service';
 import { ulid } from 'ulid';
 import { google } from 'googleapis';
 
+const scriptCode = `
+function onFormSubmit(e) {
+  var url = "https://inappreciably-dorsiferous-trish.ngrok-free.dev/webhooks/google-sheets";
+  var payload = JSON.stringify({
+    spreadsheetId: SpreadsheetApp.getActiveSpreadsheet().getId(),
+    responses: e.namedValues, // 구글 폼 응답 데이터
+    timestamp: new Date()
+  });
+  
+  var options = {
+    "method": "post",
+    "contentType": "application/json",
+    "payload": payload
+  };
+  
+  UrlFetchApp.fetch(url, options);
+}
+`;
+
 @Injectable()
 export class SheetsService {
     constructor(
@@ -100,6 +119,63 @@ export class SheetsService {
 
             return rows || [];
 
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+    /**
+     * 구글시트 스크립트 등록
+     * 1. 사용자의 구글 refresh token 이용해서 Google OAuth2 클라이언트 설정
+     * 2. Apps Script 프로젝트 생성
+     * 3. 코드 파일 업로드
+     * 4. 트리거 설정
+     */
+    async registerScript(userGuid: string, sheetId: string): Promise<any> {
+        const user = await this.baseUsersService.getUserByGuid(userGuid);
+        const googleRefreshToken = user.refreshToken;
+
+        const auth = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+        );
+
+        auth.setCredentials({ refresh_token: googleRefreshToken });
+        const scriptApi = google.script({ version: 'v1', auth });
+
+        try {
+            // 2. Apps Script 프로젝트 생성
+            const project = await scriptApi.projects.create({
+                requestBody: {
+                    title: `${sheetId} - Trigger`,
+                    parentId: user.providerId,
+                },
+            });
+
+            // 3. 코드 파일 업로드
+            const code = await scriptApi.projects.updateContent({
+                scriptId: project.data.scriptId || 'default',
+                requestBody: {
+                    files: [{
+                        name: 'main',
+                        type: 'SERVER_JS',
+                        source: scriptCode,
+                      }, {
+                        name: 'appsscript',
+                        type: 'JSON',
+                        source: JSON.stringify({
+                          timeZone: 'Asia/Seoul',
+                          exceptionLogging: 'STACKDRIVER',
+                          runtimeVersion: 'V8'
+                        })
+                      }]
+                },
+            });
+            
+            // 4. 트리거 설정
+
+            return project;
         } catch (error) {
             console.error(error);
             throw error;

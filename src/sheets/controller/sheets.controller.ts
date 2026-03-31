@@ -34,4 +34,18 @@ export class SheetsController {
         const sheetDetails = await this.sheetsService.getSheetDetails(user.userGuid, sheetId);
         return { message: 'Success', data: sheetDetails };
     }
+
+    @Post('script')
+    @ApiBearerAuth()
+    @UseGuards(AuthGuard('jwt'))
+    @ApiOperation({ summary: '구글시트 스크립트 등록' })
+    @ApiBody({ type: RegisterSheetsRequestDto })
+    @ApiResponse({ status: 200, description: '구글시트 스크립트 등록' })
+    async registerScript(@Req() req: any, @Body() body: RegisterSheetsRequestDto) {
+        const user = req.user;
+        if (!user) { throw new UnauthorizedException('Unauthorized'); }
+
+        const script = await this.sheetsService.registerScript(user.userGuid, body.sheetId);
+        return { message: 'Success', data: script };
+    }
 }
