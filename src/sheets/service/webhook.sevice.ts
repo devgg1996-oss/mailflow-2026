@@ -1,13 +1,16 @@
 import { Injectable } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { PrismaService } from "src/prisma/prisma.service";
 import { ulid } from "ulid";
+
+const EMAIL_QUEUE = "sheets-response-email-queue";
 
 @Injectable()
 export class WebhookService {
     constructor(
         private readonly prismaService: PrismaService,
-        private readonly emailQueue: Queue,
+        @InjectQueue(EMAIL_QUEUE) private readonly emailQueue: Queue,
     ) {}
 
     /**

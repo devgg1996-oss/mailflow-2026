@@ -29,9 +29,9 @@ import { BullModule } from '@nestjs/bullmq';
     JwtModule,
     BullModule.forRoot({
       connection: {
-        host: 'localhost',
-        port: 6379,
-      }
+        host: process.env.REDIS_HOST ?? 'localhost',
+        port: Number(process.env.REDIS_PORT ?? '6379'),
+      },
     }),
     // 큐 등록
     BullModule.registerQueue({

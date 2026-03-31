@@ -40,7 +40,7 @@ export class EmailProcessor extends WorkerHost {
           
                   // 2. 실제 이메일 발송 서비스 호출 (Nodemailer, SES 등)
                   console.log(`[Worker] ${email}에게 메일 발송 중...`);
-                  await this.emailsService.sendEmail(email, subject, content);
+                  await this.emailsService.sendEmail(email, name, subject, content);
                   break;
                 default:
                   throw new Error('Invalid job name');
