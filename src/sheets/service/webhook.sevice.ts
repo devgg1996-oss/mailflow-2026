@@ -1,10 +1,14 @@
 import { Injectable } from "@nestjs/common";
+import { Queue } from "bullmq";
 import { PrismaService } from "src/prisma/prisma.service";
 import { ulid } from "ulid";
 
 @Injectable()
 export class WebhookService {
-    constructor(private readonly prismaService: PrismaService) {}
+    constructor(
+        private readonly prismaService: PrismaService,
+        private readonly emailQueue: Queue,
+    ) {}
 
     /**
      * 구글시트 웹훅 처리
@@ -29,10 +33,13 @@ export class WebhookService {
             return;
         }
 
+        let name = '';
         let email = '';
         for (const [key, value] of Object.entries(responses)) {
-            if (key === '이메일' && Array.isArray(value)) {
-                email = value[0]?.toLowerCase() ?? '';
+            if (key === '이름' || key === '성함') {
+                name = value?.[0]?.toString().trim() ?? '';
+            } else if (key === '이메일' && Array.isArray(value)) {
+                email = value[0]?.toString().trim() ?? '';
                 break;
             }
         }
@@ -63,6 +70,20 @@ export class WebhookService {
                 sheetGuid: sheet.guid,
                 createdAt: new Date(),
             },
+        });
+
+        // Redis 큐에 작업 추가 (Job) -- 개인화 이메일 발송을 위한 준비
+        await this.emailQueue.add('send-individual-mail', {
+            spreadsheetId,
+            email,
+            name,
+            rawValues: responses,
+          }, 
+          {
+            // 옵션: 실패 시 3번 재시도, 5초 간격으로 지연 발생
+            attempts: 3,
+            backoff: { type: 'fixed', delay: 5000 },
+            removeOnComplete: true, // 성공 시 Redis에서 삭제 (메모리 절약)
         });
 
         // TODO: 웹훅 히스토리 생성 (추후 확장시 추가)

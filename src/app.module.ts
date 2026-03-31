@@ -14,6 +14,7 @@ import { CommonsModule } from './commons/commons.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { JwtModule } from '@nestjs/jwt';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -26,6 +27,16 @@ import { JwtModule } from '@nestjs/jwt';
     AuthModule,
     UsersModule,
     JwtModule,
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      }
+    }),
+    // 큐 등록
+    BullModule.registerQueue({
+      name: 'sheets-response-email-queue',
+    })
   ],
   controllers: [AppController, CampaignsController, CommonsController],
   providers: [AppService, SheetsService, CommonsService],
