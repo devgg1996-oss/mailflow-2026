@@ -12,11 +12,12 @@ export class SheetsService {
     ) {}
 
     /**
-     *
+     * 구글시트 등록
      * 1. 사용자의 구글 refresh token 이용해서 Google OAuth2 클라이언트 설정
      * 2. Google Sheets API 호출 (실제 시트가 존재하는지, 접근 가능한지 확인)
+     * 3. DB에 시트가 존재하지 않으면 생성
      */
-    async getSheets(userGuid: string, params: any) {
+    async registerSheets(userGuid: string, params: any) {
         const user = await this.baseUsersService.getUserByGuid(userGuid);
         console.log(user);
         const googleRefreshToken = user.refreshToken;
@@ -59,10 +60,46 @@ export class SheetsService {
                         userGuid: user.guid,
                         sheetId: user.providerId,
                         title: sheetTitle,
+                        createdAt: new Date(),
                     },
                 });
             }
             return sheets;
+        } catch (error) {
+            console.error(error);
+            throw error;
+        }
+    }
+
+    
+    /**
+     * 구글시트 응답 상세 조회
+     * 1. 사용자의 구글 refresh token 이용해서 Google OAuth2 클라이언트 설정
+     * 2. Google Sheets API 호출 (실제 시트가 존재하는지, 접근 가능한지 확인)
+     * 3. 시트의 모든 응답 가져오기
+     */
+    async getSheetDetails(userGuid: string, sheetId: string) {
+        const user = await this.baseUsersService.getUserByGuid(userGuid);
+        const googleRefreshToken = user.refreshToken;
+
+        const auth = new google.auth.OAuth2(
+            process.env.GOOGLE_CLIENT_ID,
+            process.env.GOOGLE_CLIENT_SECRET,
+        );
+
+        auth.setCredentials({ refresh_token: googleRefreshToken });
+
+        try {
+            const sheetsApi = google.sheets({ version: 'v4', auth });
+            const response = await sheetsApi.spreadsheets.values.get({
+                spreadsheetId: sheetId,
+                range: 'A:Z',
+            });
+
+            const rows = response.data?.values;
+
+            return rows || [];
+
         } catch (error) {
             console.error(error);
             throw error;

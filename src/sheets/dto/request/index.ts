@@ -1,1 +1,1 @@
-export * from './get-sheets.request.dto';
+export * from './register-sheets.request.dto';
