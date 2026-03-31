@@ -1,13 +1,13 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { Strategy } from "passport-google-oauth20";
-import { PrismaService } from "src/prisma/prisma.service";
 import { ulid } from "ulid";
 import { Provider } from "src/utils";
 import { PassportStrategy } from "@nestjs/passport";
+import { BaseUsersService } from "src/users/service/base-users.service";
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-    constructor(private readonly prismaService: PrismaService) {
+    constructor(@Inject(BaseUsersService) private readonly baseUsersService: BaseUsersService) {
         super({
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -21,7 +21,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     async validate(accessToken: string, refreshToken: string, profile: any) {
         const { name, emails } = profile;
 
-        const user = {
+        const googleUser = {
             email: emails[0].value,
             firstName: name.givenName,
             lastName: name.familyName,
@@ -29,23 +29,33 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             refreshToken,
         };
 
-        await this.prismaService.user.create({
-            data: {
-                guid: ulid(),
-                name: `${name.givenName} ${name.familyName}`,
-                email: user.email,
-                provider: Provider.GOOGLE,
-                providerId: profile.id,
-                accessToken: user.accessToken,
-                refreshToken: user.refreshToken,
-                lastLoginAt: new Date(),
-            },
-        });
+        const createData = {
+            guid: ulid(),
+            name: `${name.givenName} ${name.familyName}`,
+            email: googleUser.email,
+            provider: Provider.GOOGLE,
+            providerId: profile.id,
+            accessToken: googleUser.accessToken,
+            refreshToken: googleUser.refreshToken,
+            lastLoginAt: new Date(),
+        }
+
+        const updateData = {
+            refreshToken: googleUser.refreshToken,
+            lastLoginAt: new Date(),
+        }
+
+        const user =await this.baseUsersService.upsertUser(
+            createData.email.toLowerCase(), 
+            updateData,
+            createData
+        );
 
         return {
             accessToken,
             refreshToken,
             profile,
+            user,
         };
     }
 }

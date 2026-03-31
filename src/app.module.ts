@@ -12,6 +12,8 @@ import { CommonsService } from './commons/service/commons.service';
 import { CommonsController } from './commons/controller/commons.controller';
 import { CommonsModule } from './commons/commons.module';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { AuthModule } from './auth/auth.module';
     CampaignsModule,
     CommonsModule,
     AuthModule,
+    UsersModule,
+    JwtModule,
   ],
   controllers: [AppController, CampaignsController, CommonsController],
   providers: [AppService, SheetsService, CommonsService],

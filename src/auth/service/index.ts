@@ -1,2 +1,2 @@
 export * from './auth.service';
-export * from './google.strategy';
+export * from '../strategy/google.strategy';

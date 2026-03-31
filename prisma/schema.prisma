@@ -28,9 +28,9 @@ model User {
   name           String          @map("name")
   provider       String          @map("provider")
   providerId     String          @map("provider_id")
-  email          String          @map("email")
-  accessToken    String?         @map("access_token") @db.VarChar(255)
-  refreshToken   String?         @map("refresh_token") @db.VarChar(255)
+  email          String          @unique @map("email")
+  accessToken    String?         @map("access_token") @db.Text
+  refreshToken   String?         @map("refresh_token") @db.Text
   lastLoginAt    DateTime?       @map("last_login_at")
   createdAt      DateTime?       @map("created_at")
   updatedAt      DateTime?       @map("updated_at")
