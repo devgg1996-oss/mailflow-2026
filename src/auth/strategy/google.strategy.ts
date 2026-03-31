@@ -12,7 +12,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
             clientID: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             callbackURL: process.env.GOOGLE_CALLBACK_URL,
-            scope: ['email', 'profile', 'https://www.googleapis.com/auth/script.projects', 'https://www.googleapis.com/auth/drive.file'],
+            scope: [
+                'email', 'profile', 
+                'https://www.googleapis.com/auth/spreadsheets.readonly', 
+                'https://www.googleapis.com/auth/drive.file',
+                'https://www.googleapis.com/auth/script.projects', // 스크립트 생성/수정 권한
+                'https://www.googleapis.com/auth/script.deployments', // 스크립트 배포 권한
+                'https://www.googleapis.com/auth/script.external_request',
+                'https://www.googleapis.com/auth/spreadsheets',
+                'https://www.googleapis.com/auth/script.scriptapp',
+            ],
             accessType: 'offline',
             prompt: 'consent',
         } as any);

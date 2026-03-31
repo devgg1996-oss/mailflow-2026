@@ -34,7 +34,10 @@ export class GoogleController {
           'https://www.googleapis.com/auth/spreadsheets.readonly', 
           'https://www.googleapis.com/auth/drive.file',
           'https://www.googleapis.com/auth/script.projects', // 스크립트 생성/수정 권한
-          'https://www.googleapis.com/auth/script.deployments' // 스크립트 배포 권한
+          'https://www.googleapis.com/auth/script.deployments', // 스크립트 배포 권한
+          'https://www.googleapis.com/auth/script.external_request',
+          'https://www.googleapis.com/auth/spreadsheets',
+          'https://www.googleapis.com/auth/script.scriptapp',
         ],
         accessType: 'offline', // refresh token 발급을 위해 필요
         prompt: 'consent',

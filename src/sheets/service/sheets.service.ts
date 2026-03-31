@@ -5,11 +5,25 @@ import { ulid } from 'ulid';
 import { google } from 'googleapis';
 
 const scriptCode = `
+function setupTrigger() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var triggers = ScriptApp.getProjectTriggers();
+  var existing = triggers.some(function(t) { return t.getHandlerFunction() === 'onFormSubmit'; });
+  
+  if (!existing) {
+    ScriptApp.newTrigger('onFormSubmit')
+      .forSpreadsheet(ss)
+      .onFormSubmit()
+      .create();
+  }
+}
+
 function onFormSubmit(e) {
-  var url = "https://inappreciably-dorsiferous-trish.ngrok-free.dev/webhooks/google-sheets";
+  var url = "https://inappreciably-dorsiferous-trish.ngrok-free.dev/webhooks/google-sheets";                                                        
+                                                                   
   var payload = JSON.stringify({
     spreadsheetId: SpreadsheetApp.getActiveSpreadsheet().getId(),
-    responses: e.namedValues, // 구글 폼 응답 데이터
+    responses: e.namedValues,
     timestamp: new Date()
   });
   
@@ -77,7 +91,7 @@ export class SheetsService {
                         guid: ulid(),
                         userId: user.id,
                         userGuid: user.guid,
-                        sheetId: user.providerId,
+                        sheetId: params.sheetId,
                         title: sheetTitle,
                         createdAt: new Date(),
                     },
@@ -129,8 +143,8 @@ export class SheetsService {
      * 구글시트 스크립트 등록
      * 1. 사용자의 구글 refresh token 이용해서 Google OAuth2 클라이언트 설정
      * 2. Apps Script 프로젝트 생성
-     * 3. 코드 파일 업로드
-     * 4. 트리거 설정
+     * 3. 코드 파일 업로드 (setupTrigger + onFormSubmit + 매니페스트)
+     * 4. 스크립트 에디터 URL 반환 → 사용자가 setupTrigger를 1회 수동 실행
      */
     async registerScript(userGuid: string, sheetId: string): Promise<any> {
         const user = await this.baseUsersService.getUserByGuid(userGuid);
@@ -149,12 +163,12 @@ export class SheetsService {
             const project = await scriptApi.projects.create({
                 requestBody: {
                     title: `${sheetId} - Trigger`,
-                    parentId: user.providerId,
+                    parentId: sheetId,
                 },
             });
 
             // 3. 코드 파일 업로드
-            const code = await scriptApi.projects.updateContent({
+            await scriptApi.projects.updateContent({
                 scriptId: project.data.scriptId || 'default',
                 requestBody: {
                     files: [{
@@ -167,15 +181,25 @@ export class SheetsService {
                         source: JSON.stringify({
                           timeZone: 'Asia/Seoul',
                           exceptionLogging: 'STACKDRIVER',
-                          runtimeVersion: 'V8'
+                          runtimeVersion: 'V8',
+                          oauthScopes: [
+                            'https://www.googleapis.com/auth/script.scriptapp',
+                            'https://www.googleapis.com/auth/spreadsheets',
+                            'https://www.googleapis.com/auth/script.external_request'
+                          ]
                         })
                       }]
                 },
             });
             
-            // 4. 트리거 설정
+            const scriptId = project.data.scriptId;
+            const scriptUrl = `https://script.google.com/d/${scriptId}/edit`;
 
-            return project;
+            return {
+                scriptId,
+                scriptUrl,
+                message: '스크립트가 생성되었습니다. 아래 URL에서 setupTrigger 함수를 한 번 실행해주세요.',
+            };
         } catch (error) {
             console.error(error);
             throw error;

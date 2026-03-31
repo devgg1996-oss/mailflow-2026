@@ -130,6 +130,7 @@ model Contact {
   name               String?            @map("name")
   email              String             @map("email")
   meta               String?            @map("meta") @db.VarChar(255)
+  viewCount          Int                @default(0) @map("response_count")
   createdAt          DateTime?          @map("created_at")
   updatedAt          DateTime?          @map("updated_at")
   deletedAt          DateTime?          @map("deleted_at")
@@ -141,6 +142,7 @@ model Contact {
   sheet              Sheet              @relation(fields: [sheetId, sheetGuid], references: [id, guid])
   sendEmailHistories SendEmailHistory[]
 
+  @@unique([sheetId, email])
   @@unique([id, guid])
   @@map("contact")
 }
