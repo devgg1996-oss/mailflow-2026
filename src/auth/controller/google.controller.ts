@@ -29,8 +29,9 @@ export class GoogleController {
     return await new Promise((resolve, reject) => {
       // 세션 관련 코드 제거
       passport.authenticate('google', {
-        scope: ['email', 'profile'],
-        prompt: 'select_account', // 이 설정 추가해서 항상 계정 선택 창이 나타나도록 설정
+        scope: ['email', 'profile', 'https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/drive.file'],
+        accessType: 'offline', // refresh token 발급을 위해 필요
+        prompt: 'consent',
         state: state || 'default'
       })(req, res, (err: any) => {
         if (err) reject(err);
@@ -109,6 +110,8 @@ export class GoogleController {
               loginStatus: 'success',
               timestamp: Date.now() // 추가 보안을 위한 타임스탬프
             };
+
+            console.log(mailFlowAccessToken);
 
             // Base64 인코딩 (간단한 방법)
             const encodedData = Buffer.from(JSON.stringify(tokenData)).toString('base64');
