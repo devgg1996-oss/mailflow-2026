@@ -16,9 +16,9 @@ export class EmailProcessor extends WorkerHost {
         const { spreadsheetId, email, name, rawValues } = job.data;
 
         // 1. 이메일 템플릿 조회
-        const sheet = await this.prismaService.sheet.findUnique({
+        const sheet = await this.prismaService.sheet.findFirst({
             where: {
-                id: spreadsheetId,
+                sheetId: spreadsheetId,
             },
             include: {
                 campaigns: {

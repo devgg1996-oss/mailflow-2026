@@ -1,14 +1,33 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { createBullBoard } from '@bull-board/api';
+import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import { getQueueToken } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
 };
 
+const BULL_QUEUE_NAME = 'sheets-response-email-queue';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = Number(process.env.PORT ?? 3000);
+
+  if (process.env.BULL_BOARD_DISABLED !== 'true') {
+    const queue = app.get<Queue>(getQueueToken(BULL_QUEUE_NAME));
+    const serverAdapter = new ExpressAdapter();
+    serverAdapter.setBasePath('/admin/queues');
+    createBullBoard({
+      queues: [new BullMQAdapter(queue)],
+      serverAdapter,
+    });
+    app.use('/admin/queues', serverAdapter.getRouter());
+  }
 
   app.enableCors({
     origin: [
